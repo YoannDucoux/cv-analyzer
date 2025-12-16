@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CV Analyzer – ATS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="header">
+    <h1 class="header-title">CV Analyzer</h1>
+    <p class="header-subtitle">ATS – Applicant Tracking System</p>
+  </header>
+
+  <main class="container">
+    
+    <!-- Sélecteur de mode -->
+    <section class="card mode-selector">
+      <div class="mode-tabs">
+        <button class="mode-tab active" data-mode="single" id="modeSingle">
+          <span class="mode-tab-icon">📄</span>
+          <span class="mode-tab-text">Analyse CV / Offre</span>
+          <span class="mode-tab-subtitle">Pour candidats</span>
+        </button>
+        <button class="mode-tab" data-mode="compare" id="modeCompare">
+          <span class="mode-tab-icon">📊</span>
+          <span class="mode-tab-text">Comparaison Multi-CV</span>
+          <span class="mode-tab-subtitle">Pour recruteurs</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Section d'upload unifiée -->
+    <section class="card upload-section">
+      <h2 class="card-title" id="uploadTitle">Analyse de CV</h2>
+      <p class="card-description" id="uploadDescription">Uploadez un CV (PDF ou DOCX) pour obtenir une analyse ATS complète et des recommandations personnalisées.</p>
+      
+      <div class="upload-area">
+        <input type="file" id="cvFile" accept=".pdf,.doc,.docx" class="file-input" />
+        <button id="analyzeBtn" class="btn-primary">Analyser le CV</button>
+      </div>
+      
+      <p id="status" class="status-message"></p>
+    </section>
+
+    <!-- Section offre d'emploi unifiée -->
+    <section class="card">
+      <h2 class="card-title">Offre d'emploi</h2>
+      <p class="card-description" id="jobDescriptionText">Collez le texte de l'offre d'emploi pour comparer avec votre CV et obtenir un score d'adéquation.</p>
+      <textarea id="jobDescription" rows="8" placeholder="Collez ici le texte de l'offre d'emploi..." class="textarea-input"></textarea>
+    </section>
+
+    <!-- Score ATS -->
+    <section class="card results-section" id="atsSection" style="display: none;">
+      <h2 class="card-title">Score ATS</h2>
+      <div id="ats"></div>
+    </section>
+
+    <!-- Insights -->
+    <section class="card results-section" id="insightsSection" style="display: none;">
+      <h2 class="card-title">Analyse et Recommandations</h2>
+      <div id="insights"></div>
+    </section>
+
+    <!-- Job Matching -->
+    <section class="card results-section" id="jobMatchingSection" style="display: none;">
+      <h2 class="card-title">Outil de matching CV / Offre d'emploi pour candidats</h2>
+      <div id="jobMatching"></div>
+    </section>
+
+    <!-- Keyword Matching -->
+    <section class="card results-section" id="keywordMatchingSection" style="display: none;">
+      <h2 class="card-title">Correspondance avec l'offre</h2>
+      <div id="keywordMatching"></div>
+    </section>
+
+    <!-- Résultats de comparaison multi-CV -->
+    <section class="card results-section" id="comparisonSection" style="display: none;">
+      <h2 class="card-title">Outil de comparaison multi CV pour recruteur</h2>
+      <p id="comparisonStatus" class="status-message"></p>
+      <div id="comparisonResults"></div>
+    </section>
+
+    <!-- Données canoniques (repliable) -->
+    <section class="card results-section" id="canonicalSection" style="display: none;">
+      <button class="toggle-btn" id="canonicalToggle">
+        <span>Données techniques</span>
+        <span class="toggle-icon">▼</span>
+      </button>
+      <div id="canonical" class="collapsible-content" style="display: none;"></div>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
