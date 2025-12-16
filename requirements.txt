@@ -1,7 +1,0 @@
-fastapi
-uvicorn[standard]
-pydantic
-python-multipart
-PyMuPDF
-python-docx
-openai
