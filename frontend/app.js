@@ -1,5 +1,8 @@
-const API_URL = "http://127.0.0.1:8000/api/v1/analyze-cv";
-const COMPARE_API_URL = "http://127.0.0.1:8000/api/v1/compare-cvs";
+const API_BASE_URL = "https://cv-analyzer-api-2php.onrender.com";
+
+const API_URL = `${API_BASE_URL}/api/v1/analyze-cv`;
+const COMPARE_API_URL = `${API_BASE_URL}/api/v1/compare-cvs`;
+
 
 // Éléments pour le système d'onglets
 const modeSingle = document.getElementById("modeSingle");
