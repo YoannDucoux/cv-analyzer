@@ -8,7 +8,11 @@ app = FastAPI(title="CV Analyzer", version="0.1.0")
 # En production, on restreindra allow_origins à ton domaine.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+  "https://ton-frontend.netlify.app",
+  "https://ton-frontend.vercel.app"
+],
+,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
