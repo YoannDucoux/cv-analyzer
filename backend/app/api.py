@@ -147,32 +147,3 @@ async def compare_cvs_endpoint(
             detail=f"Erreur lors de la comparaison: {str(e)}",
         )
 
-
-# =========================
-# Debug endpoints (désactivés par défaut en prod)
-# =========================
-if ENABLE_DEBUG:
-
-    @router.post("/debug/extract-text", response_class=PlainTextResponse)
-    async def debug_extract_text(file: UploadFile = File(...)):
-        raw_bytes = await _read_and_validate_file(file)
-        cv_text, _warnings = extract_text_from_file(raw_bytes, file.filename)
-        return cv_text
-
-    @router.get("/debug/config")
-    def debug_config():
-        from app.core.config import settings
-        from app.services.llm import client
-
-        return {
-            "openai_api_key_configured": bool(settings.OPENAI_API_KEY),
-            "openai_api_key_length": len(settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else 0,
-            "client_initialized": client is not None,
-            "llm_provider": settings.LLM_PROVIDER,
-            "enable_debug": True,
-        }
-
-    @router.get("/debug/test")
-    def debug_test():
-        return {"status": "ok", "message": "Le serveur répond correctement", "enable_debug": True}
-
