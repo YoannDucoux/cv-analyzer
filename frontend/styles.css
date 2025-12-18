@@ -1058,4 +1058,12 @@ body {
   .mode-tab-icon {
     font-size: 1.5rem;
   }
+  .privacy-footer {
+  margin-top: 60px;
+  padding: 20px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
 }
