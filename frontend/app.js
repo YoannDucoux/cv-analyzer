@@ -1,11 +1,7 @@
 // URL de l'API configurable via variable d'environnement Netlify ou fallback
-// Netlify: définir VITE_API_BASE_URL ou API_BASE_URL dans les variables d'environnement
-// Pour le développement local, utiliser window.API_BASE_URL ou la valeur par défaut
-const API_BASE_URL = 
-  window.API_BASE_URL || 
-  (typeof import !== 'undefined' && import.meta?.env?.VITE_API_BASE_URL) ||
-  (typeof import !== 'undefined' && import.meta?.env?.API_BASE_URL) ||
-  "https://cv-analyzer-api-2php.onrender.com";
+// Netlify: définir window.API_BASE_URL dans un script avant app.js ou utiliser la valeur par défaut
+// Pour le développement local, définir window.API_BASE_URL = "http://localhost:8000"
+const API_BASE_URL = window.API_BASE_URL || "https://cv-analyzer-api-2php.onrender.com";
 
 const API_URL = `${API_BASE_URL}/api/v1/analyze-cv`;
 const COMPARE_API_URL = `${API_BASE_URL}/api/v1/compare-cvs`;
@@ -20,6 +16,8 @@ let currentMode = "single"; // "single" ou "compare"
 // Éléments unifiés
 const fileInput = document.getElementById("cvFile");
 const analyzeBtn = document.getElementById("analyzeBtn");
+const analyzeBtnText = document.getElementById("analyzeBtnText");
+const analyzeBtnSpinner = document.getElementById("analyzeBtnSpinner");
 const statusEl = document.getElementById("status");
 const jobDescriptionEl = document.getElementById("jobDescription");
 const uploadTitle = document.getElementById("uploadTitle");
@@ -55,15 +53,18 @@ function switchMode(mode) {
     fileInput.setAttribute("multiple", "multiple");
     uploadTitle.textContent = "Comparaison Multi-CV";
     uploadDescription.textContent = "Uploadez plusieurs CV (minimum 2, PDF ou DOCX) pour comparer leur adéquation avec une offre d'emploi.";
-    analyzeBtn.textContent = "Comparer les CV";
+    analyzeBtnText.textContent = "Comparer les CV";
     jobDescriptionText.textContent = "Collez le texte de l'offre d'emploi pour comparer avec les CV et obtenir un classement.";
   } else {
     fileInput.removeAttribute("multiple");
     uploadTitle.textContent = "Analyse de CV";
     uploadDescription.textContent = "Uploadez un CV (PDF ou DOCX) pour obtenir une analyse de CV complète et des recommandations personnalisées.";
-    analyzeBtn.textContent = "Analyser le CV";
+    analyzeBtnText.textContent = "Analyser le CV";
     jobDescriptionText.textContent = "Collez le texte de l'offre d'emploi pour comparer avec votre CV et obtenir un score d'adéquation.";
   }
+  
+  // Réinitialiser l'état du bouton
+  setLoading(false);
   
   // Réinitialiser les résultats
   clearResults();
@@ -89,6 +90,49 @@ modeCompare.addEventListener("click", () => switchMode("compare"));
 
 // Initialiser le mode par défaut
 switchMode("single");
+
+// Fonctions de gestion d'état
+function setLoading(isLoading, message = null) {
+  if (isLoading) {
+    analyzeBtn.disabled = true;
+    analyzeBtnSpinner.style.display = "inline-block";
+    if (message) {
+      analyzeBtnText.textContent = message;
+    } else {
+      analyzeBtnText.textContent = currentMode === "compare" ? "Comparaison…" : "Analyse…";
+    }
+  } else {
+    analyzeBtn.disabled = false;
+    analyzeBtnSpinner.style.display = "none";
+    analyzeBtnText.textContent = currentMode === "compare" ? "Comparer les CV" : "Analyser le CV";
+  }
+}
+
+function setStatus(type, text) {
+  statusEl.textContent = text;
+  statusEl.className = "status-message";
+  
+  // Réinitialiser les styles
+  statusEl.style.background = "";
+  statusEl.style.color = "";
+  
+  if (type === "success") {
+    statusEl.style.background = "#d1fae5";
+    statusEl.style.color = "#065f46";
+  } else if (type === "error") {
+    statusEl.style.background = "#fef2f2";
+    statusEl.style.color = "#991b1b";
+  } else if (type === "loading") {
+    statusEl.style.background = "#fef3c7";
+    statusEl.style.color = "#92400e";
+    // Ajouter un spinner dans le message si nécessaire
+    if (text && !text.includes("⏳")) {
+      statusEl.innerHTML = `<span class="spinner"></span>${text}`;
+    }
+  } else {
+    // Type "info" ou autre - pas de style spécial
+  }
+}
 
 // Fonction utilitaire pour obtenir la classe de couleur selon le score
 function getScoreClass(score) {
@@ -414,29 +458,24 @@ analyzeBtn.addEventListener("click", async () => {
   jobMatchingEl.innerHTML = "";
   comparisonResults.innerHTML = "";
 
+  // Validation initiale
   if (!fileInput.files.length) {
-    statusEl.textContent = currentMode === "compare" 
+    setStatus("error", currentMode === "compare" 
       ? "❌ Veuillez sélectionner au moins 2 fichiers CV."
-      : "❌ Merci de sélectionner un fichier PDF ou DOCX.";
-    statusEl.style.background = "#fef2f2";
-    statusEl.style.color = "#991b1b";
+      : "❌ Merci de sélectionner un fichier PDF ou DOCX.");
     return;
   }
 
   // Mode comparaison
   if (currentMode === "compare") {
     if (fileInput.files.length < 2) {
-      statusEl.textContent = "❌ Veuillez sélectionner au moins 2 fichiers CV.";
-      statusEl.style.background = "#fef2f2";
-      statusEl.style.color = "#991b1b";
+      setStatus("error", "❌ Veuillez sélectionner au moins 2 fichiers CV.");
       return;
     }
 
     const jobDescription = jobDescriptionEl.value.trim();
     if (!jobDescription) {
-      statusEl.textContent = "❌ Veuillez fournir le texte de l'offre d'emploi.";
-      statusEl.style.background = "#fef2f2";
-      statusEl.style.color = "#991b1b";
+      setStatus("error", "❌ Veuillez fournir le texte de l'offre d'emploi.");
       return;
     }
 
@@ -446,10 +485,8 @@ analyzeBtn.addEventListener("click", async () => {
     }
     formData.append("job_description", jobDescription);
 
-    statusEl.textContent = "⏳ Comparaison en cours…";
-    statusEl.style.background = "#fef3c7";
-    statusEl.style.color = "#92400e";
-    analyzeBtn.disabled = true;
+    setLoading(true, "Comparaison…");
+    setStatus("loading", "Comparaison en cours…");
 
     try {
       console.log("Envoi de la requête de comparaison...");
@@ -486,10 +523,8 @@ analyzeBtn.addEventListener("click", async () => {
       const data = await response.json();
       console.log("Données de comparaison reçues:", data);
       
-      statusEl.textContent = "✅ Comparaison terminée.";
-      statusEl.style.background = "#d1fae5";
-      statusEl.style.color = "#065f46";
-      analyzeBtn.disabled = false;
+      setLoading(false);
+      setStatus("success", "✅ Comparaison terminée.");
       
       comparisonResults.innerHTML = renderComparison(data);
       comparisonSection.style.display = "block";
@@ -497,6 +532,8 @@ analyzeBtn.addEventListener("click", async () => {
       
     } catch (error) {
       console.error("Erreur complète:", error);
+      
+      setLoading(false);
       
       let errorMessage = "❌ Erreur lors de la comparaison.";
       
@@ -508,10 +545,7 @@ analyzeBtn.addEventListener("click", async () => {
         errorMessage += ` ${error.message}`;
       }
       
-      statusEl.textContent = errorMessage;
-      statusEl.style.background = "#fef2f2";
-      statusEl.style.color = "#991b1b";
-      analyzeBtn.disabled = false;
+      setStatus("error", errorMessage);
       
       if (error.stack) {
         console.error("Stack trace:", error.stack);
@@ -530,10 +564,8 @@ analyzeBtn.addEventListener("click", async () => {
     formData.append("job_description", jobDescription);
   }
 
-  statusEl.textContent = "⏳ Analyse en cours…";
-  statusEl.style.background = "#fef3c7";
-  statusEl.style.color = "#92400e";
-  analyzeBtn.disabled = true;
+  setLoading(true, "Analyse…");
+  setStatus("loading", "Analyse en cours…");
 
   try {
     console.log("Envoi de la requête d'analyse...");
@@ -569,10 +601,8 @@ analyzeBtn.addEventListener("click", async () => {
     const data = await response.json();
     console.log("Données reçues:", data);
 
-    statusEl.textContent = "✅ Analyse terminée.";
-    statusEl.style.background = "#d1fae5";
-    statusEl.style.color = "#065f46";
-    analyzeBtn.disabled = false;
+    setLoading(false);
+    setStatus("success", "✅ Analyse terminée.");
 
     // Afficher les résultats
     if (data.ats) {
@@ -621,6 +651,8 @@ analyzeBtn.addEventListener("click", async () => {
   } catch (error) {
     console.error("Erreur complète:", error);
     
+    setLoading(false);
+    
     let errorMessage = "❌ Erreur lors de l'analyse.";
     
     if (error.name === "AbortError") {
@@ -631,10 +663,7 @@ analyzeBtn.addEventListener("click", async () => {
       errorMessage += ` ${error.message}`;
     }
     
-    statusEl.textContent = errorMessage;
-    statusEl.style.background = "#fef2f2";
-    statusEl.style.color = "#991b1b";
-    analyzeBtn.disabled = false;
+    setStatus("error", errorMessage);
     
     if (error.stack) {
       console.error("Stack trace:", error.stack);

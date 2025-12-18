@@ -41,7 +41,10 @@
       
       <div class="upload-area">
         <input type="file" id="cvFile" accept=".pdf,.doc,.docx" class="file-input" />
-        <button id="analyzeBtn" class="btn-primary">Analyser le CV</button>
+        <button id="analyzeBtn" class="btn-primary">
+          <span id="analyzeBtnText">Analyser le CV</span>
+          <span class="spinner" id="analyzeBtnSpinner" style="display: none;"></span>
+        </button>
       </div>
       
       <p id="status" class="status-message"></p>
