@@ -52,7 +52,7 @@ function switchMode(mode) {
   } else {
     fileInput.removeAttribute("multiple");
     uploadTitle.textContent = "Analyse de CV";
-    uploadDescription.textContent = "Uploadez un CV (PDF ou DOCX) pour obtenir une analyse ATS complète et des recommandations personnalisées.";
+    uploadDescription.textContent = "Uploadez un CV (PDF ou DOCX) pour obtenir une analyse de CV complète et des recommandations personnalisées.";
     analyzeBtn.textContent = "Analyser le CV";
     jobDescriptionText.textContent = "Collez le texte de l'offre d'emploi pour comparer avec votre CV et obtenir un score d'adéquation.";
   }
