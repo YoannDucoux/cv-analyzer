@@ -5,7 +5,6 @@ import inspect
 from typing import Optional, List, Tuple
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, Form
-from fastapi.responses import PlainTextResponse
 
 from app.services.extract_text import extract_text_from_file
 from app.services.analyze import analyze_cv
@@ -31,9 +30,6 @@ ALLOWED_CONTENT_TYPES = {
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "application/msword",
 }
-
-# Activer debug uniquement si ENABLE_DEBUG=true côté environnement (Render)
-ENABLE_DEBUG = os.getenv("ENABLE_DEBUG", "false").strip().lower() == "true"
 
 
 async def _maybe_await(value):
@@ -78,17 +74,28 @@ async def analyze_cv_endpoint(
     try:
         cv_text, warnings = extract_text_from_file(raw_bytes, file.filename)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur extraction: {e}")
-
-    # analyze_cv peut être sync OU async selon ta version -> on gère les deux
-    result = await _maybe_await(
-        analyze_cv(
-            cv_text=cv_text,
-            extraction_warnings=warnings,
-            job_description=job_description,
+        logger.error(f"Erreur extraction pour {file.filename}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur extraction: {str(e)}"
         )
-    )
-    return result
+
+    try:
+        # analyze_cv peut être sync OU async selon ta version -> on gère les deux
+        result = await _maybe_await(
+            analyze_cv(
+                cv_text=cv_text,
+                extraction_warnings=warnings,
+                job_description=job_description,
+            )
+        )
+        return result
+    except Exception as e:
+        logger.error(f"Erreur analyse CV: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur lors de l'analyse: {str(e)}"
+        )
 
 
 @router.post("/compare-cvs", response_model=CVComparisonResult)

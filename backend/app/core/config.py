@@ -12,6 +12,12 @@ class Settings(BaseSettings):
 
     LLM_PROVIDER: str = Field(default="openai")
     OPENAI_API_KEY: str | None = Field(default=None)
+    
+    # CORS: liste d'origines autorisées séparées par des virgules
+    # Exemple: "https://example.com,https://preview.example.com"
+    CORS_ORIGINS: str = Field(
+        default="https://6942d3e2bde5e3860c376944--cv-analyzer-api.netlify.app"
+    )
 
     class Config:
         env_file = ".env"

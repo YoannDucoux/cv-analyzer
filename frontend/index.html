@@ -96,6 +96,19 @@
 
   </main>
 
+  <!-- Configuration de l'URL API via variable d'environnement Netlify -->
+  <!-- Netlify: définir API_BASE_URL dans les variables d'environnement -->
+  <!-- Pour override manuel, définir window.API_BASE_URL avant ce script -->
+  <script>
+    // Permet de configurer l'URL API via variable d'environnement Netlify
+    // Netlify injecte les variables d'environnement au build, mais pour le client-side
+    // on peut utiliser un fichier de config ou une variable globale
+    // Par défaut, utilise l'URL Render en production
+    if (typeof window.API_BASE_URL === 'undefined') {
+      // Si Netlify a injecté une variable, elle sera disponible ici
+      // Sinon, on utilise la valeur par défaut définie dans app.js
+    }
+  </script>
   <script src="app.js"></script>
   <footer class="privacy-footer">
   <p>

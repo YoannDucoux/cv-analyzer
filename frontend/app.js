@@ -1,7 +1,15 @@
-const API_BASE_URL = "https://cv-analyzer-api-2php.onrender.com";
+// URL de l'API configurable via variable d'environnement Netlify ou fallback
+// Netlify: définir VITE_API_BASE_URL ou API_BASE_URL dans les variables d'environnement
+// Pour le développement local, utiliser window.API_BASE_URL ou la valeur par défaut
+const API_BASE_URL = 
+  window.API_BASE_URL || 
+  (typeof import !== 'undefined' && import.meta?.env?.VITE_API_BASE_URL) ||
+  (typeof import !== 'undefined' && import.meta?.env?.API_BASE_URL) ||
+  "https://cv-analyzer-api-2php.onrender.com";
 
 const API_URL = `${API_BASE_URL}/api/v1/analyze-cv`;
 const COMPARE_API_URL = `${API_BASE_URL}/api/v1/compare-cvs`;
+const HEALTH_URL = `${API_BASE_URL}/api/v1/health`;
 
 
 // Éléments pour le système d'onglets
@@ -447,18 +455,7 @@ analyzeBtn.addEventListener("click", async () => {
       console.log("Envoi de la requête de comparaison...");
       console.log("Nombre de fichiers:", fileInput.files.length);
       console.log("Description de l'offre:", jobDescription.substring(0, 50) + "...");
-      
-      // Test de connectivité d'abord
-      try {
-        const testResponse = await fetch("http://127.0.0.1:8000/api/v1/debug/test");
-        if (!testResponse.ok) {
-          throw new Error("Le serveur ne répond pas correctement");
-        }
-        console.log("✅ Serveur accessible");
-      } catch (testError) {
-        console.error("❌ Serveur non accessible:", testError);
-        throw new Error("Le serveur n'est pas accessible. Vérifiez qu'il est démarré sur http://127.0.0.1:8000");
-      }
+      console.log("URL API:", COMPARE_API_URL);
       
       // Timeout de 5 minutes pour la comparaison
       const controller = new AbortController();
@@ -504,9 +501,9 @@ analyzeBtn.addEventListener("click", async () => {
       let errorMessage = "❌ Erreur lors de la comparaison.";
       
       if (error.name === "AbortError") {
-        errorMessage = "❌ La requête a pris trop de temps (timeout). La comparaison de plusieurs CV peut être longue. Réessayez.";
+        errorMessage = "❌ La requête a pris trop de temps (timeout 5 min). La comparaison de plusieurs CV peut être longue. Réessayez.";
       } else if (error.name === "TypeError" && error.message.includes("fetch")) {
-        errorMessage = "❌ Impossible de contacter le serveur. Vérifiez que le serveur est démarré sur http://127.0.0.1:8000";
+        errorMessage = `❌ Impossible de contacter le serveur (${API_BASE_URL}). Vérifiez votre connexion internet.`;
       } else if (error.message) {
         errorMessage += ` ${error.message}`;
       }
@@ -539,14 +536,34 @@ analyzeBtn.addEventListener("click", async () => {
   analyzeBtn.disabled = true;
 
   try {
+    console.log("Envoi de la requête d'analyse...");
+    console.log("Fichier:", file.name);
+    console.log("URL API:", API_URL);
+    
+    // Timeout de 3 minutes pour l'analyse simple
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 180000);
+    
     const response = await fetch(API_URL, {
       method: "POST",
       body: formData,
+      signal: controller.signal,
     });
+    
+    clearTimeout(timeoutId);
+    
+    console.log("Réponse reçue, status:", response.status);
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText);
+      let errorText = await response.text();
+      console.error("Erreur HTTP:", response.status, errorText);
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorText = errorJson.detail || errorText;
+      } catch {
+        // Garder le texte brut si ce n'est pas du JSON
+      }
+      throw new Error(`Erreur ${response.status}: ${errorText}`);
     }
 
     const data = await response.json();
@@ -602,11 +619,26 @@ analyzeBtn.addEventListener("click", async () => {
     }
 
   } catch (error) {
-    statusEl.textContent = "❌ Erreur lors de l'analyse.";
+    console.error("Erreur complète:", error);
+    
+    let errorMessage = "❌ Erreur lors de l'analyse.";
+    
+    if (error.name === "AbortError") {
+      errorMessage = "❌ La requête a pris trop de temps (timeout 3 min). Réessayez.";
+    } else if (error.name === "TypeError" && error.message.includes("fetch")) {
+      errorMessage = `❌ Impossible de contacter le serveur (${API_BASE_URL}). Vérifiez votre connexion internet.`;
+    } else if (error.message) {
+      errorMessage += ` ${error.message}`;
+    }
+    
+    statusEl.textContent = errorMessage;
     statusEl.style.background = "#fef2f2";
     statusEl.style.color = "#991b1b";
     analyzeBtn.disabled = false;
-    console.error(error);
+    
+    if (error.stack) {
+      console.error("Stack trace:", error.stack);
+    }
   }
 });
 
